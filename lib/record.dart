@@ -11,8 +11,8 @@ class RecordScreen extends StatefulWidget {
 class _RecordScreenState extends State<RecordScreen> {
   final _formKey = GlobalKey<FormState>();
   String nombre = '';
-  int? tipoId;
-  int? jornadaId;
+  int? tipoId; // cargo
+  int? jornadaId; // turno
   bool noTurnoDoble = false;
   bool noDomingo = false;
 
@@ -64,27 +64,23 @@ class _RecordScreenState extends State<RecordScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
+      final payload = {
+        'nombre': nombre,
+        'id_cargo': tipoId,
+        'id_turno': jornadaId, // IMPORTANTE: turno para disponibilidad_semanal
+        'no_sabados_domingos': noDomingo ? 1 : 0,
+        'max_5_turnos': noTurnoDoble ? 1 : 0,
+      };
+
       if (trabajadorEdicion != null) {
         // Actualizar
-        await ApiService.updateTrabajador(trabajadorEdicion!['id_trabajador'], {
-          'nombre': nombre,
-          'id_cargo': tipoId,
-          'id_turno': jornadaId,
-          'no_sabados_domingos': noDomingo ? 1 : 0,
-          'max_5_turnos': noTurnoDoble ? 1 : 0,
-        });
+        await ApiService.updateTrabajador(trabajadorEdicion!['id_trabajador'], payload);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Trabajador actualizado correctamente')),
         );
       } else {
         // Crear
-        await ApiService.createTrabajador({
-          'nombre': nombre,
-          'id_cargo': tipoId,
-          'id_turno': jornadaId,
-          'no_sabados_domingos': noDomingo ? 1 : 0,
-          'max_5_turnos': noTurnoDoble ? 1 : 0,
-        });
+        await ApiService.createTrabajador(payload);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Trabajador registrado correctamente')),
         );
@@ -106,7 +102,10 @@ class _RecordScreenState extends State<RecordScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(trabajadorEdicion != null ? 'Editar Trabajador' : 'Registrar Trabajador')),
+      appBar: AppBar(
+          title: Text(trabajadorEdicion != null
+              ? 'Editar Trabajador'
+              : 'Registrar Trabajador')),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -117,16 +116,19 @@ class _RecordScreenState extends State<RecordScreen> {
                 // Nombre
                 TextFormField(
                   initialValue: nombre,
-                  decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'Nombre', border: OutlineInputBorder()),
                   onChanged: (value) => nombre = value,
-                  validator: (value) => value == null || value.isEmpty ? 'Ingrese un nombre' : null,
+                  validator: (value) =>
+                      value == null || value.isEmpty ? 'Ingrese un nombre' : null,
                 ),
                 const SizedBox(height: 16),
 
                 // Cargos
                 DropdownButtonFormField<int>(
                   value: tipoId,
-                  decoration: const InputDecoration(labelText: 'Cargo', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'Cargo', border: OutlineInputBorder()),
                   items: cargos
                       .map((c) => DropdownMenuItem<int>(
                             value: c['id_cargo'] as int,
@@ -140,7 +142,8 @@ class _RecordScreenState extends State<RecordScreen> {
                 // Turnos
                 DropdownButtonFormField<int>(
                   value: jornadaId,
-                  decoration: const InputDecoration(labelText: 'Jornada', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'Turno', border: OutlineInputBorder()),
                   items: turnos
                       .map((t) => DropdownMenuItem<int>(
                             value: t['id_turno'] as int,
@@ -167,7 +170,8 @@ class _RecordScreenState extends State<RecordScreen> {
 
                 ElevatedButton(
                   onPressed: registrarOActualizar,
-                  child: Text(trabajadorEdicion != null ? 'Actualizar' : 'Registrar'),
+                  child: Text(
+                      trabajadorEdicion != null ? 'Actualizar' : 'Registrar'),
                 ),
               ],
             ),

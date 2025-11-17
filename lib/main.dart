@@ -4,6 +4,7 @@ import 'record.dart';
 import 'table.dart';
 import 'calendar.dart';
 import 'hello_test.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(MyApp());
@@ -45,9 +46,28 @@ class MainScreen extends StatelessWidget {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/calendar'),
+              onPressed: () async {
+                final url = Uri.parse("http://127.0.0.1:8001/api/asignaciones/generar");
+
+                try {
+                  final response = await http.post(url);
+
+                  print("STATUS: ${response.statusCode}");
+                  print("BODY: ${response.body}");
+
+                  if (response.statusCode == 200 || response.statusCode == 201) {
+                    Navigator.pushNamed(context, '/calendar');
+                  } else {
+                    print("Error al generar asignaciones: ${response.body}");
+                  }
+                } catch (e) {
+                  print("Error de conexión: $e");
+                }
+              },
               child: Text('Asignación'),
             ),
+
+
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
