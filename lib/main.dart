@@ -3,6 +3,7 @@ import 'workers.dart';
 import 'record.dart';
 import 'table.dart';
 import 'calendar.dart';
+import 'hello_test.dart';
 
 void main() {
   runApp(MyApp());
@@ -47,6 +48,16 @@ class MainScreen extends StatelessWidget {
               onPressed: () => Navigator.pushNamed(context, '/calendar'),
               child: Text('Asignación'),
             ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HelloTestPage()),
+                );
+              },
+              child: Text('Probar API'),
+            ),            
           ],
         ),
       ),

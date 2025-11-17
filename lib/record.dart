@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
 class RecordScreen extends StatefulWidget {
   const RecordScreen({super.key});
@@ -9,124 +10,166 @@ class RecordScreen extends StatefulWidget {
 
 class _RecordScreenState extends State<RecordScreen> {
   final _formKey = GlobalKey<FormState>();
-
-  // Campos del formulario
   String nombre = '';
-  String tipo = 'Supervisor';
-  String horario = 'Mañana';
+  int? tipoId;
+  int? jornadaId;
   bool noTurnoDoble = false;
   bool noDomingo = false;
 
+  List<dynamic> cargos = [];
+  List<dynamic> turnos = [];
+  bool loading = true;
+
+  Map<String, dynamic>? trabajadorEdicion;
+
+  @override
+  void initState() {
+    super.initState();
+    cargarDatos();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Revisar si recibimos trabajador para edición
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args != null && args is Map<String, dynamic>) {
+      trabajadorEdicion = args;
+      nombre = trabajadorEdicion!['nombre'];
+      tipoId = trabajadorEdicion!['id_cargo'];
+      jornadaId = trabajadorEdicion!['id_turno'];
+      noDomingo = trabajadorEdicion!['no_sabados_domingos'] == 1;
+      noTurnoDoble = trabajadorEdicion!['max_5_turnos'] == 1;
+    }
+  }
+
+  void cargarDatos() async {
+    try {
+      final cargosData = await ApiService.getCargos();
+      final turnosData = await ApiService.getTurnos();
+      setState(() {
+        cargos = cargosData;
+        turnos = turnosData;
+        if (tipoId == null && cargos.isNotEmpty) tipoId = cargos[0]['id_cargo'] as int;
+        if (jornadaId == null && turnos.isNotEmpty) jornadaId = turnos[0]['id_turno'] as int;
+        loading = false;
+      });
+    } catch (e) {
+      print("Error al cargar cargos o turnos: $e");
+      setState(() => loading = false);
+    }
+  }
+
+  void registrarOActualizar() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    try {
+      if (trabajadorEdicion != null) {
+        // Actualizar
+        await ApiService.updateTrabajador(trabajadorEdicion!['id_trabajador'], {
+          'nombre': nombre,
+          'id_cargo': tipoId,
+          'id_turno': jornadaId,
+          'no_sabados_domingos': noDomingo ? 1 : 0,
+          'max_5_turnos': noTurnoDoble ? 1 : 0,
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Trabajador actualizado correctamente')),
+        );
+      } else {
+        // Crear
+        await ApiService.createTrabajador({
+          'nombre': nombre,
+          'id_cargo': tipoId,
+          'id_turno': jornadaId,
+          'no_sabados_domingos': noDomingo ? 1 : 0,
+          'max_5_turnos': noTurnoDoble ? 1 : 0,
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Trabajador registrado correctamente')),
+        );
+      }
+
+      Navigator.pop(context, true); // regresar a tabla y recargar
+    } catch (e) {
+      print("Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al guardar trabajador')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Registrar Trabajador')),
+      appBar: AppBar(title: Text(trabajadorEdicion != null ? 'Editar Trabajador' : 'Registrar Trabajador')),
       body: SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                // Nombre
+                TextFormField(
+                  initialValue: nombre,
+                  decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
+                  onChanged: (value) => nombre = value,
+                  validator: (value) => value == null || value.isEmpty ? 'Ingrese un nombre' : null,
+                ),
+                const SizedBox(height: 16),
 
-                  
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre',
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        nombre = value;
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Ingrese un nombre';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
+                // Cargos
+                DropdownButtonFormField<int>(
+                  value: tipoId,
+                  decoration: const InputDecoration(labelText: 'Cargo', border: OutlineInputBorder()),
+                  items: cargos
+                      .map((c) => DropdownMenuItem<int>(
+                            value: c['id_cargo'] as int,
+                            child: Text(c['nombre']),
+                          ))
+                      .toList(),
+                  onChanged: (value) => setState(() => tipoId = value),
+                ),
+                const SizedBox(height: 16),
 
-                  // Desplegable 
-                  DropdownButtonFormField<String>(
-                    initialValue: tipo,
-                    decoration: const InputDecoration(
-                      labelText: 'Tipo',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'Supervisor', child: Text('Supervisor')),
-                      DropdownMenuItem(value: 'Operario', child: Text('Operario')),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        tipo = value!;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
+                // Turnos
+                DropdownButtonFormField<int>(
+                  value: jornadaId,
+                  decoration: const InputDecoration(labelText: 'Jornada', border: OutlineInputBorder()),
+                  items: turnos
+                      .map((t) => DropdownMenuItem<int>(
+                            value: t['id_turno'] as int,
+                            child: Text(t['nombre']),
+                          ))
+                      .toList(),
+                  onChanged: (value) => setState(() => jornadaId = value),
+                ),
+                const SizedBox(height: 16),
 
-                  // Desplegable 
-                  DropdownButtonFormField<String>(
-                    initialValue: horario,
-                    decoration: const InputDecoration(
-                      labelText: 'Horario',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'Mañana', child: Text('Mañana')),
-                      DropdownMenuItem(value: 'Tarde', child: Text('Tarde')),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        horario = value!;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
+                // Checklist
+                CheckboxListTile(
+                  title: const Text('No trabajar turno doble'),
+                  value: noTurnoDoble,
+                  onChanged: (value) => setState(() => noTurnoDoble = value!),
+                ),
+                CheckboxListTile(
+                  title: const Text('No trabajar el domingo'),
+                  value: noDomingo,
+                  onChanged: (value) => setState(() => noDomingo = value!),
+                ),
 
-                  // Checklist
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CheckboxListTile(
-                        title: const Text('No trabajar turno doble'),
-                        value: noTurnoDoble,
-                        onChanged: (value) {
-                          setState(() {
-                            noTurnoDoble = value!;
-                          });
-                        },
-                      ),
-                      CheckboxListTile(
-                        title: const Text('No trabajar el domingo'),
-                        value: noDomingo,
-                        onChanged: (value) {
-                          setState(() {
-                            noDomingo = value!;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-                  // Botón Registrar
-                  ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        
-                        Navigator.pushNamed(context, '/table');
-                      }
-                    },
-                    child: const Text('Registrar'),
-                  ),
-                ],
-              ),
+                ElevatedButton(
+                  onPressed: registrarOActualizar,
+                  child: Text(trabajadorEdicion != null ? 'Actualizar' : 'Registrar'),
+                ),
+              ],
             ),
           ),
         ),
