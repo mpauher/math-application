@@ -13,7 +13,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Organizador de Turnos'),
+        title: const Text('Organizador y optimizador'),
       ),
       body: Center(
         child: Padding(
