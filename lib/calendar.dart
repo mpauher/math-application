@@ -27,7 +27,6 @@ class CalendarScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Calendario Semanal')),
       body: FutureBuilder<Map<String, Map<String, List<String>>>>(
-        // <-- Cambio aquí: solo traer la última asignación
         future: ApiService.getUltimaAsignacion(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -68,41 +67,52 @@ class CalendarScreen extends StatelessWidget {
           });
 
           return SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: ordered.entries.expand((entry) {
-                  final day = entry.key;
-                  final shifts = entry.value;
+            child: Center( // <-- Aquí se centra todo
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // para centrar verticalmente
+                  crossAxisAlignment: CrossAxisAlignment.center, // centrar horizontalmente
+                  children: ordered.entries.expand((entry) {
+                    final day = entry.key;
+                    final shifts = entry.value;
 
-                  return shifts.entries.map((shiftEntry) {
-                    final shift = shiftEntry.key;
-                    final workers = shiftEntry.value;
+                    return shifts.entries.map((shiftEntry) {
+                      final shift = shiftEntry.key;
+                      final workers = shiftEntry.value;
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '$day - $shift',
-                            style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          workers.isEmpty
-                              ? const Text("No hay trabajadores asignados")
-                              : Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: workers
-                                      .map((w) => Text("• $w"))
-                                      .toList(),
-                                ),
-                        ],
-                      ),
-                    );
-                  });
-                }).toList(),
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center, // centrar horizontalmente
+                          children: [
+                            Text(
+                              '$day - $shift',
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 4),
+                            workers.isEmpty
+                                ? const Text(
+                                    "No hay trabajadores asignados",
+                                    textAlign: TextAlign.center,
+                                  )
+                                : Column(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: workers
+                                        .map((w) => Text(
+                                              "• $w",
+                                              textAlign: TextAlign.center,
+                                            ))
+                                        .toList(),
+                                  ),
+                          ],
+                        ),
+                      );
+                    });
+                  }).toList(),
+                ),
               ),
             ),
           );
