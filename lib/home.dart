@@ -3,6 +3,8 @@ import 'workers.dart';
 import 'shifts.dart';
 import 'rules.dart';
 import 'generate.dart';
+import 'hello_test.dart';
+
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -82,6 +84,21 @@ class HomePage extends StatelessWidget {
                     );
                   },
                   child: const Text("Generar Asignación"),
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              SizedBox(
+                width: 220,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HelloTestPage()),
+                    );
+                  },
+                  child: const Text("Probar API"),
                 ),
               ),
             ],
