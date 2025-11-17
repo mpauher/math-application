@@ -1,19 +1,55 @@
 import 'package:flutter/material.dart';
-import 'home.dart';          // ← usa tu nombre real
+import 'workers.dart';
+import 'record.dart';
+import 'table.dart';
+import 'calendar.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'App de Gestión',
       debugShowCheckedModeBanner: false,
-      title: 'Organizador de Turnos',
-      home: const HomePage(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => MainScreen(),
+        '/workers': (context) => WorkersScreen(),
+        '/record': (context) => RecordScreen(),
+        '/table': (context) => TableScreen(),
+        '/calendar': (context) => CalendarScreen(),
+      },
+    );
+  }
+}
+
+class MainScreen extends StatelessWidget {
+ 
+  MainScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Inicio')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () => Navigator.pushNamed(context, '/workers'),
+              child: Text('Trabajadores'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.pushNamed(context, '/calendar'),
+              child: Text('Asignación'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
